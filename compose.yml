@@ -1,0 +1,17 @@
+---
+version: '3.8'
+name: "restapi-stack"
+services:
+  api:
+    build: .
+    container_name: fastapi-app
+    ports:
+      - '8000:80'
+    networks:
+      - backend
+      - front
+    restart: "no"
+
+networks:
+  backend:
+  front:
