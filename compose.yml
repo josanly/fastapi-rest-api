@@ -5,13 +5,40 @@ services:
   api:
     build: .
     container_name: fastapi-app
+    environment:
+      SQL_DB_NAME: 'maindb'
+      SQL_DB_USER: 'restapp'
+      SQL_DB_PASSWORD: 'restapppassword'
+      SQL_DB_HOST: 'postgresdb:5432'
+    depends_on:
+      postgresdb:
+        condition: service_healthy
     ports:
       - '8000:80'
     networks:
       - backend
       - front
     restart: "no"
-
+  postgresdb:
+    image: postgres:15-alpine
+    volumes:
+      - postgresdb_data:/var/lib/postgresql/data/
+    expose:
+      - 5432
+    environment:
+      POSTGRES_USER: 'restapp'
+      POSTGRES_PASSWORD: 'restapppassword'
+      POSTGRES_DB: 'maindb'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
 networks:
   backend:
   front:
+
+volumes:
+  postgresdb_data:
