@@ -1,7 +1,7 @@
 from pydantic import BaseSettings, Field
 
 
-class DBSettings(BaseSettings):
+class SQLDBSettings(BaseSettings):
     sql_db_name:     str = Field(..., env='SQL_DB_NAME')
     sql_db_user:     str = Field(..., env='SQL_DB_USER')
     sql_db_password: str = Field(..., env='SQL_DB_PASSWORD')
@@ -19,4 +19,4 @@ class DBSettings(BaseSettings):
                + self.sql_db_name
 
 
-databases_settings = DBSettings()
+databases_settings = SQLDBSettings()
