@@ -2,7 +2,7 @@
 version: '3.8'
 name: "restapi-stack"
 services:
-  api:
+  app:
     build: .
     container_name: fastapi-app
     environment:
@@ -10,8 +10,14 @@ services:
       SQL_DB_USER: 'restapp'
       SQL_DB_PASSWORD: 'restapppassword'
       SQL_DB_HOST: 'postgresdb:5432'
+      MONGO_DB_NAME: 'docdb'
+      MONGO_DB_USER: 'restapp'
+      MONGO_DB_PASSWORD: 'restapppassword'
+      MONGO_DB_HOST: 'mongodb:27017'
     depends_on:
       postgresdb:
+        condition: service_healthy
+      mongodb:
         condition: service_healthy
     ports:
       - '8000:80'
@@ -21,6 +27,7 @@ services:
     restart: "no"
   postgresdb:
     image: postgres:15-alpine
+    container_name: fastapi-relationaldb
     volumes:
       - postgresdb_data:/var/lib/postgresql/data/
     expose:
@@ -34,11 +41,40 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     networks:
       - backend
+    restart: always
+  mongodb:
+    image: mongo:6.0.7
+    container_name: fastapi-documentdb
+    volumes:
+      - mongodb_data:/data/db
+      - mongoconfig:/data/configdb
+    expose:
+      - 27017
+    environment:
+      MONGO_DATA_DIR: '/data/db'
+      #MONGO_LOG_DIR: '/dev/null'
+      MONGO_INITDB_DATABASE: 'docdb'
+      MONGO_INITDB_ROOT_USERNAME: 'admin'
+      MONGO_INITDB_ROOT_PASSWORD: 'admin'
+    command: [--auth]
+    healthcheck:
+      test: echo 'db.stats().ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - backend
+    restart: always
+
 networks:
   backend:
   front:
 
 volumes:
   postgresdb_data:
+  mongodb_data:
+  mongoconfig:

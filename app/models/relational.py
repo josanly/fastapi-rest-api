@@ -2,6 +2,7 @@ from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.databases.relational import Base
 
+
 class Users(Base):
     __tablename__ = "users"
 
@@ -26,6 +27,7 @@ class Analyses(Base):
     priority = Column(Integer)
     complete = Column(Boolean, default=False)
     owner_id = Column(Integer, ForeignKey("users.id"))
+    metadata_ref = Column(Integer, default=None)
 
     owner = relationship("Users", back_populates="analyses")
 

@@ -18,5 +18,24 @@ class SQLDBSettings(BaseSettings):
                + '/' \
                + self.sql_db_name
 
+class DocumentDBSettings(BaseSettings):
+    mongo_db_name:      str = Field(..., env='MONGO_DB_NAME')
+    mongo_db_user:      str = Field(..., env='MONGO_DB_USER')
+    mongo_db_password:  str = Field(..., env='MONGO_DB_PASSWORD')
+    mongo_db_host:      str = Field(..., env='MONGO_DB_HOST')
 
-databases_settings = SQLDBSettings()
+    @property
+    def mongo_db_url(self):
+        return 'mongodb://' \
+            + self.mongo_db_user \
+            + ':' \
+            + self.mongo_db_password \
+            + '@' \
+            + self.mongo_db_host \
+            + '/' \
+            + self.mongo_db_name \
+            + '?retryWrites=true&w=majority'
+
+#export MONGODB_URL="mongodb+srv://<username>:<password>@<url>/<db>?retryWrites=true&w=majority"
+sqldb_settings = SQLDBSettings()
+mongodb_settings = DocumentDBSettings()
