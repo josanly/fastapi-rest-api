@@ -19,12 +19,15 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_healthy
-    ports:
-      - '8000:80'
+    expose:
+      - 8000
     networks:
       - backend
       - front
     restart: "no"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fastapi.rule=Host(`fastapi.localhost`)"
   postgresdb:
     image: postgres:15-alpine
     container_name: fastapi-relationaldb
@@ -69,6 +72,16 @@ services:
     networks:
       - backend
     restart: always
+  traefik: # new
+    image: traefik:v3.0
+    ports:
+      - 8000:80
+      - 8081:8080
+    volumes:
+      - "./traefik.dev.toml:/etc/traefik/traefik.toml"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - front
 
 networks:
   backend:

@@ -1,10 +1,33 @@
 # REST API build with FastAPI
 
-## Generate secret key (random)
+Small project to develop REST API using [FastAPI](https://fastapi.tiangolo.com/).
+
+## Development 
+
+### Generate secret key (random)
 
 ```bash
 $ openssl rand -hex 32
 ```
+
+
+
+## Docker Compose (dev and testing only) 
+
+Stack:
+
+* FastAPI app
+* Postgres server
+* Mongodb server
+* Traefik proxy
+
+Access Swagger UI of FastAPI app: http://fastapi.localhost:8000/docs
+
+Access Traefik dashboard: http://fastapi.localhost:8081/dashboard/#/
+
+For further details refer to: [this blog](https://testdriven.io/blog/fastapi-docker-traefik/#production-dockerfile).
+
+### Setup Mongodb
 
 ```bash
 # inside mongodb container 
