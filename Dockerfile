@@ -1,4 +1,4 @@
-FROM python:3.9.17-alpine3.18 AS builder
+FROM python:3.11.4-alpine3.18 AS builder
 LABEL maintainer="josso.adrien@gmail.com"
 
 WORKDIR /code

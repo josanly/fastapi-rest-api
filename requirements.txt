@@ -11,3 +11,6 @@ motor~=3.2.0
 jose~=1.0.0
 pymongo~=4.4.0
 pydantic[email]
+structlog~=23.1.0
+termcolor~=2.3.0
+Pygments~=2.15.1
