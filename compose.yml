@@ -8,12 +8,17 @@ services:
     environment:
       SQL_DB_NAME: 'maindb'
       SQL_DB_USER: 'restapp'
-      SQL_DB_PASSWORD: 'restapppassword'
+#      SQL_DB_PASSWORD: 'restapppassword'
       SQL_DB_HOST: 'postgresdb:5432'
       MONGO_DB_NAME: 'docdb'
       MONGO_DB_USER: 'restapp'
       MONGO_DB_PASSWORD: 'restapppassword'
       MONGO_DB_HOST: 'mongodb:27017'
+      LOG_MODE: 'dev'
+      SECRETS_DIR: '/run/secrets/'
+    secrets:
+      - sql_db_password
+      - mongo_db_password
     depends_on:
       postgresdb:
         condition: service_healthy
@@ -38,7 +43,10 @@ services:
     environment:
       POSTGRES_USER: 'restapp'
       POSTGRES_PASSWORD: 'restapppassword'
+      #POSTGRES_PASSWORD: /run/secrets/postgresdbpassword
       POSTGRES_DB: 'maindb'
+#    secrets:
+#      - postgresdbpassword
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready" ]
       interval: 10s
@@ -75,8 +83,8 @@ services:
   traefik: # new
     image: traefik:v3.0
     ports:
-      - 8000:80
-      - 8081:8080
+      - "8000:80"
+      - "8081:8080"
     volumes:
       - "./traefik.dev.toml:/etc/traefik/traefik.toml"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
@@ -91,3 +99,9 @@ volumes:
   postgresdb_data:
   mongodb_data:
   mongoconfig:
+
+secrets:
+  sql_db_password:
+    file: resources/postgresdb_password.txt
+  mongo_db_password:
+    file: resources/mongodb_password.txt
