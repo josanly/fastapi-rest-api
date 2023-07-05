@@ -29,6 +29,8 @@ For further details refer to: [this blog](https://testdriven.io/blog/fastapi-doc
 
 ### Setup Mongodb
 
+Create User:
+
 ```bash
 # inside mongodb container 
 $ docker compose exec mongodb /bin/sh
