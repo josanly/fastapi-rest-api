@@ -8,11 +8,9 @@ services:
     environment:
       SQL_DB_NAME: 'maindb'
       SQL_DB_USER: 'restapp'
-#      SQL_DB_PASSWORD: 'restapppassword'
       SQL_DB_HOST: 'postgresdb:5432'
       MONGO_DB_NAME: 'docdb'
       MONGO_DB_USER: 'restapp'
-      MONGO_DB_PASSWORD: 'restapppassword'
       MONGO_DB_HOST: 'mongodb:27017'
       LOG_MODE: 'dev'
       SECRETS_DIR: '/run/secrets/'
@@ -42,11 +40,11 @@ services:
       - 5432
     environment:
       POSTGRES_USER: 'restapp'
-      POSTGRES_PASSWORD: 'restapppassword'
-      #POSTGRES_PASSWORD: /run/secrets/postgresdbpassword
+      #POSTGRES_PASSWORD: 'restapppassword'
+      POSTGRES_PASSWORD_FILE: /run/secrets/sql_db_password
       POSTGRES_DB: 'maindb'
-#    secrets:
-#      - postgresdbpassword
+    secrets:
+      - sql_db_password
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready" ]
       interval: 10s
@@ -69,7 +67,9 @@ services:
       #MONGO_LOG_DIR: '/dev/null'
       MONGO_INITDB_DATABASE: 'docdb'
       MONGO_INITDB_ROOT_USERNAME: 'admin'
-      MONGO_INITDB_ROOT_PASSWORD: 'admin'
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_db_password
+    secrets:
+      - mongo_db_password
     command: [--auth]
     healthcheck:
       test: echo 'db.stats().ok' | mongosh localhost:27017/test --quiet
@@ -80,7 +80,7 @@ services:
     networks:
       - backend
     restart: always
-  traefik: # new
+  traefik:
     image: traefik:v3.0
     ports:
       - "8000:80"
