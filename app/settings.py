@@ -1,13 +1,14 @@
 import os
 import sys
+from functools import lru_cache
 
 from pydantic import BaseSettings, Field, SecretStr, ValidationError
-
 from app.logger.config import Mode, get_structlogger
 
 secrets_dir: str = 'SECRETS_DIR'
 
 
+@lru_cache()
 def get_secret_dir():
     try:
         return os.environ[secrets_dir]
@@ -16,17 +17,20 @@ def get_secret_dir():
         sys.exit(1)
 
 
+class Settings(BaseSettings):
+    app_name: str = "FastAPI REST API"
+    app_version: str = Field(default="0.1.0", validate_default=True, regex="^[0-9]\\.[0-9]\\.[0-9]")
+
+
 class SQLDBSettings(BaseSettings):
     sql_db_name: str
     sql_db_user: str
     sql_db_password: SecretStr
     sql_db_host: str
-
     class Config:
         secrets_dir = get_secret_dir()
 
-    @property
-    def sql_db_url(self):
+    def sql_db_url(self) -> str:
         return 'postgresql://' \
                + self.sql_db_user \
                + ':' \
@@ -48,8 +52,7 @@ class DocumentDBSettings(BaseSettings):
     class Config:
         secrets_dir = get_secret_dir()
 
-    @property
-    def mongo_db_url(self):
+    def mongo_db_url(self) -> str:
         return 'mongodb://' \
             + self.mongo_db_user \
             + ':' \
@@ -67,9 +70,10 @@ class LoggerSettings(BaseSettings):
     mode: Mode = Field(default=Mode.full, validate_default=True, env='LOG_MODE')
 
 
-def get_logger_settings():
+@lru_cache()
+def get_mongodb_settings():
     try:
-        logger_settings = LoggerSettings()
+        mongodb_settings = DocumentDBSettings()
     except ValidationError as error:
         get_structlogger().error("Catch Validation Error during configuration of application", errors=error.errors())
         sys.exit(1)
@@ -77,10 +81,11 @@ def get_logger_settings():
         get_structlogger().error("Fatal exception during configuration of application", errors=error)
         sys.exit(1)
     else:
-        get_structlogger().info("Settings", logger_settings=logger_settings)
-        return logger_settings
+        get_structlogger().info("Settings", mongodb_settings=mongodb_settings)
+        return mongodb_settings
 
 
+@lru_cache()
 def get_sqldb_settings():
     try:
         sqldb_settings = SQLDBSettings()
@@ -95,9 +100,10 @@ def get_sqldb_settings():
         return sqldb_settings
 
 
-def get_mongodb_settings():
+@lru_cache()
+def get_logger_settings():
     try:
-        mongodb_settings = DocumentDBSettings()
+        logger_settings = LoggerSettings()
     except ValidationError as error:
         get_structlogger().error("Catch Validation Error during configuration of application", errors=error.errors())
         sys.exit(1)
@@ -105,5 +111,5 @@ def get_mongodb_settings():
         get_structlogger().error("Fatal exception during configuration of application", errors=error)
         sys.exit(1)
     else:
-        get_structlogger().info("Settings", mongodb_settings=mongodb_settings)
-        return mongodb_settings
+        get_structlogger().info("Settings", logger_settings=logger_settings)
+        return logger_settings

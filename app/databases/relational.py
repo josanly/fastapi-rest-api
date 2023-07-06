@@ -1,13 +1,16 @@
+from typing import Annotated
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-from app.settings import get_sqldb_settings
+from app.settings import get_sqldb_settings, SQLDBSettings
 
 
+# sqldb_settings = Annotated[SQLDBSettings, ]
 sqldb_settings = get_sqldb_settings()
 engine = create_engine(
-    sqldb_settings.sql_db_url
+    sqldb_settings.sql_db_url()
 )
 
 SessionLocal = sessionmaker(autocommit=False,

@@ -1,17 +1,24 @@
+from functools import lru_cache
+from typing import Annotated
+
 from fastapi import FastAPI, Depends
-from fastapi.encoders import jsonable_encoder
 from fastapi_healthcheck import HealthCheckFactory, healthCheckRoute
 from starlette import status
-from starlette.staticfiles import StaticFiles
 
-from .databases.document import mongodb_settings
-from .databases.relational import Base, engine, sqldb_settings
-from .logger.config import Mode, StructLoggingMiddleware, get_structlogger
+from .databases.relational import Base, engine
+from .logger.config import StructLoggingMiddleware, get_structlogger
 from .routers import auth, users, analyses
-from .settings import get_logger_settings
+from .settings import Settings, LoggerSettings, DocumentDBSettings, get_mongodb_settings, \
+    get_sqldb_settings, get_logger_settings, SQLDBSettings
 
 
 app = FastAPI()
+
+
+@lru_cache()
+def get_settings():
+    return Settings()
+
 
 # Log management
 app.add_middleware(StructLoggingMiddleware, mode=get_logger_settings().mode)
@@ -29,33 +36,15 @@ Base.metadata.create_all(bind=engine)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(analyses.router)
-app.add_api_route('/health', endpoint=healthCheckRoute(factory=_healthChecks))
+app.add_api_route('/health', endpoint=healthCheckRoute(factory=_healthChecks), tags=["application"])
 
 
-# @app.get("/health", status_code=status.HTTP_200_OK)
-# async def app_healthy(logger=Depends(get_structlogger)):
-#     logger.info("Check status of application")
-#     return {"state": "healthy"}
-
-
-@app.get("/")
-def read_root(logger=Depends(get_structlogger)):
-    logger.info("Hello World info")
-    logger.info({"message": "json as main log"})
-    logger.debug("Debuuuug", foo="foo", bar="bar")
-    logger.error("Erroooor!!!", obj={"foo": "bar"}, test="test")
-    return {"Hello": "World"}
-
-
-@app.get("/settings")
-def settings(logger=Depends(get_structlogger)):
-    logger_settings = get_logger_settings()
-    logger.info("GET Settings",
-                sqldb_settings=jsonable_encoder(sqldb_settings.dict()),
-                mongodb_settings=jsonable_encoder(mongodb_settings.dict()),
-                logger_settings=jsonable_encoder(logger_settings.dict()))
-    return {
-        'sqldb_settings': sqldb_settings.dict(),
-        'mongodb_settings': mongodb_settings.dict(),
-        'logger_settings': logger_settings.dict()
+@app.get("/info", status_code=status.HTTP_200_OK, tags=["application"])
+async def info(app_settings: Annotated[Settings, Depends(get_settings)], logger=Depends(get_structlogger)):
+    app_info = {
+        "app_name": app_settings.app_name,
+        "version":  app_settings.app_version
     }
+    logger.info("Application information", info=app_info)
+    return app_info
+
