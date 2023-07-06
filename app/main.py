@@ -1,6 +1,6 @@
-from typing import Union
 from fastapi import FastAPI, Depends
 from fastapi.encoders import jsonable_encoder
+from fastapi_healthcheck import HealthCheckFactory, healthCheckRoute
 from starlette import status
 from starlette.staticfiles import StaticFiles
 
@@ -8,13 +8,16 @@ from .databases.document import mongodb_settings
 from .databases.relational import Base, engine, sqldb_settings
 from .logger.config import Mode, StructLoggingMiddleware, get_structlogger
 from .routers import auth, users, analyses
-from .settings import get_logger_settings, get_sqldb_settings, get_mongodb_settings
+from .settings import get_logger_settings
 
 
 app = FastAPI()
 
 # Log management
 app.add_middleware(StructLoggingMiddleware, mode=get_logger_settings().mode)
+
+# Add Health Checks
+_healthChecks = HealthCheckFactory()
 
 # Relational DB
 Base.metadata.create_all(bind=engine)
@@ -26,12 +29,13 @@ Base.metadata.create_all(bind=engine)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(analyses.router)
+app.add_api_route('/health', endpoint=healthCheckRoute(factory=_healthChecks))
 
 
-@app.get("/health", status_code=status.HTTP_200_OK)
-async def app_healthy(logger=Depends(get_structlogger)):
-    logger.info("Check status of application")
-    return {"state": "healthy"}
+# @app.get("/health", status_code=status.HTTP_200_OK)
+# async def app_healthy(logger=Depends(get_structlogger)):
+#     logger.info("Check status of application")
+#     return {"state": "healthy"}
 
 
 @app.get("/")
@@ -41,11 +45,6 @@ def read_root(logger=Depends(get_structlogger)):
     logger.debug("Debuuuug", foo="foo", bar="bar")
     logger.error("Erroooor!!!", obj={"foo": "bar"}, test="test")
     return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
 
 
 @app.get("/settings")

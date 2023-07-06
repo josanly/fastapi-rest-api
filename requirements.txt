@@ -14,3 +14,4 @@ pydantic[email]
 structlog~=23.1.0
 termcolor~=2.3.0
 Pygments~=2.15.1
+fastapi-healthcheck~=0.2.12

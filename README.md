@@ -10,6 +10,7 @@ Small project to develop REST API using [FastAPI](https://fastapi.tiangolo.com/)
 $ openssl rand -hex 32
 ```
 
+Use [fastapi_healthcheck](https://github.com/jtom38/fastapi_healthcheck) module to implement `/health` path.
 
 
 ## Docker Compose (dev and testing only) 
