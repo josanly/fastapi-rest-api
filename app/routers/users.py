@@ -1,28 +1,23 @@
 from typing import Annotated
 
 from passlib.context import CryptContext
-from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
-from app.databases.relational import SessionLocal, get_relationaldb
+from app.databases.relational import get_relationaldb
 from .auth import get_current_user
-from ..models.relational import Users
+from app.models.users.relational import Users
+from ..models.users.api import UserVerification
+
 
 router = APIRouter(
     prefix='/users',
     tags=['users']
 )
 
-
 relationaldb_dependency = Annotated[Session, Depends(get_relationaldb)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-
-
-class UserVerification(BaseModel):
-    password: str
-    new_password: str = Field(min_length=8)
 
 
 @router.get('/', status_code=status.HTTP_200_OK)

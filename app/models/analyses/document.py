@@ -40,6 +40,7 @@ class AnalysisModel(BaseModel):
         #    }
         #}
 
+
 class UpdateAnalysisModel(BaseModel):
     name: Optional[str]
     client_contact: Optional[EmailStr]
@@ -50,4 +51,3 @@ class UpdateAnalysisModel(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         json_encoders = {ObjectId: str}
-

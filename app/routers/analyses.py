@@ -2,14 +2,14 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette import status
 
 from app.databases.document import get_document_db
 from app.databases.relational import get_relationaldb
-from app.models.document import AnalysisModel
-from app.models.relational import Analyses
+from app.models.analyses.api import CreateAnalysisRequest
+from app.models.analyses.document import AnalysisModel
+from app.models.analyses.relational import Analyses
 from app.routers.auth import get_current_user
 
 router = APIRouter(
@@ -20,12 +20,6 @@ router = APIRouter(
 user_dependency = Annotated[dict, Depends(get_current_user)]
 relationaldb_dependency = Annotated[Session, Depends(get_relationaldb)]
 doc_db = get_document_db()
-
-
-class CreateAnalysisRequest(BaseModel):
-    title: str
-    description: str
-    priority: int = Path(gt=0, lt=6)
 
 
 @router.get('/', status_code=status.HTTP_200_OK)

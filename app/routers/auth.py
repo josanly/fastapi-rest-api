@@ -1,11 +1,11 @@
 from datetime import timedelta, datetime
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette import status
-from app.databases.relational import SessionLocal, get_relationaldb
-from app.models.relational import Users
+from app.databases.relational import get_relationaldb
+from app.models.users.api import CreateUserRequest, Token
+from app.models.users.relational import Users
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
@@ -21,22 +21,7 @@ ALGORITHM = 'HS256'
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 
-
 relationaldb_dependency = Annotated[Session, Depends(get_relationaldb)]
-
-
-class CreateUserRequest(BaseModel):
-    username: str
-    email: str
-    first_name: str
-    last_name: str
-    password: str
-    role: str
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
 
 
 def authenticate_user(username: str, password: str, db):
