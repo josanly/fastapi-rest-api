@@ -5,15 +5,15 @@ from functools import lru_cache
 from pydantic import BaseSettings, Field, SecretStr, ValidationError
 from app.logger.config import Mode, get_structlogger
 
-secrets_dir: str = 'SECRETS_DIR'
+SecretsDirEnvVarName: str = 'SECRETS_DIR'
 
 
 @lru_cache()
 def get_secret_dir():
     try:
-        return os.environ[secrets_dir]
+        return os.environ[SecretsDirEnvVarName]
     except KeyError:
-        get_structlogger().error(f"Missing env var: {secrets_dir}")
+        get_structlogger().error(f"Missing env var: {SecretsDirEnvVarName}")
         sys.exit(1)
 
 
@@ -27,8 +27,9 @@ class SQLDBSettings(BaseSettings):
     sql_db_user: str
     sql_db_password: SecretStr
     sql_db_host: str
+
     class Config:
-        secrets_dir = get_secret_dir()
+        secrets_dir: str = get_secret_dir()
 
     def sql_db_url(self) -> str:
         return 'postgresql://' \
@@ -81,7 +82,7 @@ def get_mongodb_settings():
         get_structlogger().error("Fatal exception during configuration of application", errors=error)
         sys.exit(1)
     else:
-        get_structlogger().info("Settings", mongodb_settings=mongodb_settings)
+        get_structlogger().info("Settings", mongodb_settings=mongodb_settings, mongodb_url=mongodb_settings.mongo_db_url())
         return mongodb_settings
 
 

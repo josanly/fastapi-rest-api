@@ -8,8 +8,7 @@ from starlette import status
 from .databases.relational import Base, engine
 from .logger.config import StructLoggingMiddleware, get_structlogger
 from .routers import auth, users, analyses
-from .settings import Settings, LoggerSettings, DocumentDBSettings, get_mongodb_settings, \
-    get_sqldb_settings, get_logger_settings, SQLDBSettings
+from .settings import Settings, get_logger_settings
 
 
 app = FastAPI()

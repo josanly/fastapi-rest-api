@@ -5,15 +5,9 @@ services:
   app:
     build: .
     container_name: fastapi-app
+    env_file: "${APP_ENV_FILE}"
     environment:
-      SQL_DB_NAME: 'maindb'
-      SQL_DB_USER: 'restapp'
-      SQL_DB_HOST: 'postgresdb:5432'
-      MONGO_DB_NAME: 'docdb'
-      MONGO_DB_USER: 'restapp'
-      MONGO_DB_HOST: 'mongodb:27017'
-      LOG_MODE: 'dev'
-      SECRETS_DIR: '/run/secrets/'
+      SECRETS_DIR: "${CONTAINER_SECRETS_DIR}"
     secrets:
       - sql_db_password
       - mongo_db_password
@@ -38,11 +32,9 @@ services:
       - postgresdb_data:/var/lib/postgresql/data/
     expose:
       - 5432
+    env_file: "${POSTGRESDB_ENV_FILE}"
     environment:
-      POSTGRES_USER: 'restapp'
-      #POSTGRES_PASSWORD: 'restapppassword'
       POSTGRES_PASSWORD_FILE: /run/secrets/sql_db_password
-      POSTGRES_DB: 'maindb'
     secrets:
       - sql_db_password
     healthcheck:
@@ -60,13 +52,13 @@ services:
     volumes:
       - mongodb_data:/data/db
       - mongoconfig:/data/configdb
+      - ./resources/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     expose:
       - 27017
+    ports:
+      - "27017:27017" # debugging purpose not required to run application
+    env_file: "${MONGODB_ENV_FILE}"
     environment:
-      MONGO_DATA_DIR: '/data/db'
-      #MONGO_LOG_DIR: '/dev/null'
-      MONGO_INITDB_DATABASE: 'docdb'
-      MONGO_INITDB_ROOT_USERNAME: 'admin'
       MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_db_password
     secrets:
       - mongo_db_password
@@ -86,7 +78,7 @@ services:
       - "8000:80"
       - "8081:8080"
     volumes:
-      - "./traefik.dev.toml:/etc/traefik/traefik.toml"
+      - "./resources/traefik.dev.toml:/etc/traefik/traefik.toml"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - front
