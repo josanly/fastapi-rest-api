@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path
 from fastapi.encoders import jsonable_encoder
+from motor.motor_asyncio import AsyncIOMotorClient
 from sqlalchemy.orm import Session
 from starlette import status
 
@@ -19,7 +20,7 @@ router = APIRouter(
 
 user_dependency = Annotated[dict, Depends(get_current_user)]
 relationaldb_dependency = Annotated[Session, Depends(get_relationaldb)]
-doc_db = get_document_db()
+documentdb_dependency = Annotated[AsyncIOMotorClient, Depends(get_document_db)]
 
 
 @router.get('/', status_code=status.HTTP_200_OK)
@@ -56,7 +57,10 @@ async def get_analysis(user: user_dependency, db: relationaldb_dependency, analy
 
 
 @router.get('/details/{analysis_id}', status_code=status.HTTP_200_OK)
-async def get_analysis_details(user: user_dependency, db: relationaldb_dependency, analysis_id: int = Path(gt=0)):
+async def get_analysis_details(user: user_dependency,
+                               db: relationaldb_dependency,
+                               doc_db: documentdb_dependency,
+                               analysis_id: int = Path(gt=0)):
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
     analysis_model = db.query(Analyses) \
@@ -74,7 +78,11 @@ async def get_analysis_details(user: user_dependency, db: relationaldb_dependenc
 
 
 @router.post("/details/{analysis_id}", status_code=status.HTTP_201_CREATED)
-async def create_analysis(user: user_dependency, db: relationaldb_dependency, analysis_metadata: AnalysisModel, analysis_id: int = Path(gt=0)):
+async def create_analysis(user: user_dependency,
+                          db: relationaldb_dependency,
+                          doc_db: documentdb_dependency,
+                          analysis_metadata: AnalysisModel,
+                          analysis_id: int = Path(gt=0)):
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
     analysis_model = db.query(Analyses) \
