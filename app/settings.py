@@ -22,24 +22,34 @@ class Settings(BaseSettings):
     app_version: str = Field(default="0.1.0", validate_default=True, regex="^[0-9]\\.[0-9]\\.[0-9]")
 
 
+def build_sql_db_url(user: str, pwd: SecretStr, host: str, db_name: str) -> str:
+    return 'postgresql://' \
+           + user \
+           + ':' \
+           + pwd.get_secret_value() \
+           + '@' \
+           + host \
+           + '/' \
+           + db_name
+
+
 class SQLDBSettings(BaseSettings):
     sql_db_name: str
     sql_db_user: str
     sql_db_password: SecretStr
     sql_db_host: str
+    sql_db_url: str = 'to_define'
 
     class Config:
         secrets_dir: str = get_secret_dir()
 
-    def sql_db_url(self) -> str:
-        return 'postgresql://' \
-               + self.sql_db_user \
-               + ':' \
-               + self.sql_db_password.get_secret_value() \
-               + '@' \
-               + self.sql_db_host \
-               + '/' \
-               + self.sql_db_name
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        if self.sql_db_url == 'to_define':
+            self.sql_db_url = build_sql_db_url(self.sql_db_user,
+                                               self.sql_db_password,
+                                               self.sql_db_host,
+                                               self.sql_db_name)
 
 
 class DocumentDBSettings(BaseSettings):
