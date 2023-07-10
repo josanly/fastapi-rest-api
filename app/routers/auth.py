@@ -1,14 +1,18 @@
 from datetime import timedelta, datetime
 from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from starlette import status
-from app.databases.relational import get_relationaldb
-from app.models.users.api import CreateUserRequest, Token
-from app.models.users.relational import Users
-from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
+from passlib.context import CryptContext
+from sqlalchemy.orm import Session
+from starlette import status
+
+from app.databases import crud
+from app.databases.relational import get_relationaldb
+from app.models.relational import User
+from app.models.users.schemas import CreateUserRequest, Token
+
 
 router = APIRouter(
     prefix='/auth',
@@ -24,8 +28,8 @@ oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 relationaldb_dependency = Annotated[Session, Depends(get_relationaldb)]
 
 
-def authenticate_user(username: str, password: str, db):
-    user = db.query(Users).filter(Users.username == username).first()
+def authenticate_user(username: str, password: str, db: Session):
+    user = crud.get_user_by_name(db, username)
     if not user:
         return None
     if not bcrypt_context.verify(password, user.hashed_password):
@@ -58,17 +62,15 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_user(db: relationaldb_dependency,
                       create_user_request: CreateUserRequest):
-    create_user_model = Users(
-        email=create_user_request.email,
-        username=create_user_request.username,
-        first_name=create_user_request.first_name,
-        last_name=create_user_request.last_name,
-        role=create_user_request.role,
-        hashed_password=bcrypt_context.hash(create_user_request.password),
-        is_active=True
-    )
-    db.add(create_user_model)
-    db.commit()
+    crud.create_user(db,
+                     User(email=create_user_request.email,
+                          username=create_user_request.username,
+                          first_name=create_user_request.first_name,
+                          last_name=create_user_request.last_name,
+                          role=create_user_request.role,
+                          hashed_password=bcrypt_context.hash(create_user_request.password),
+                          is_active=True)
+                     )
 
 
 @router.post("/token", response_model=Token)
