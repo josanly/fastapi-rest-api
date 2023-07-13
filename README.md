@@ -12,6 +12,16 @@ $ openssl rand -hex 32
 
 Use [fastapi_healthcheck](https://github.com/jtom38/fastapi_healthcheck) module to implement `/health` path.
 
+## Testing
+
+```bash
+$ python -m venv venv
+$ source venv/bin/activate
+$ pip install -r requirements-dev.txt
+(venv) $ pytest app/tests/test_crud.py
+```
+
+Refer to [documentation](https://fastapi.tiangolo.com/tutorial/testing/).
 
 ## Docker Compose (dev and testing only) 
 
