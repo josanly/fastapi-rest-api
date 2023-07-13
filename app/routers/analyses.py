@@ -6,11 +6,13 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from sqlalchemy.orm import Session
 from starlette import status
 
+from app.databases import crud
 from app.databases.document import get_document_db
 from app.databases.relational import get_relationaldb
 from app.models.analyses.schemas import CreateAnalysisRequest, AnalysisModel
 from app.models.relational import Analysis
 from app.routers.auth import get_current_user
+
 
 router = APIRouter(
     prefix='/analyses',
@@ -24,7 +26,7 @@ documentdb_dependency = Annotated[AsyncIOMotorClient, Depends(get_document_db)]
 
 @router.get('/', status_code=status.HTTP_200_OK)
 async def list_analyses(db: relationaldb_dependency):
-    return db.query(Analysis).all()
+    return crud.list_analyses(db)
 
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
@@ -37,22 +39,17 @@ async def create_analysis(user: user_dependency, db: relationaldb_dependency, cr
         priority=create_analysis_request.priority,
         owner_id=user.get('id')
     )
-    db.add(new_analysis)
-    db.commit()
+    await crud.create_or_update_analysis(db, new_analysis)
 
 
 @router.get('/{analysis_id}', status_code=status.HTTP_200_OK)
 async def get_analysis(user: user_dependency, db: relationaldb_dependency, analysis_id: int = Path(gt=0)):
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
-    analysis_model = db.query(Analysis) \
-                       .filter(Analysis.id == analysis_id) \
-                       .filter(Analysis.owner_id == user.get('id')) \
-                       .first()
-    if analysis_model is not None:
-        return analysis_model
+    analysis_entity = crud.get_analysis(db, analysis_id)
+    if analysis_entity is not None:
+        return analysis_entity
     raise HTTPException(status_code=404, detail='Analysis not found.')
-
 
 
 @router.get('/details/{analysis_id}', status_code=status.HTTP_200_OK)
@@ -62,14 +59,8 @@ async def get_analysis_details(user: user_dependency,
                                analysis_id: int = Path(gt=0)):
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
-    analysis_model = db.query(Analysis) \
-                       .filter(Analysis.id == analysis_id) \
-                       .filter(Analysis.owner_id == user.get('id')) \
-                       .first()
-    if analysis_model is not None:
-        analysis_metadata = await doc_db["analyses"].find_one(
-            {"_id": analysis_model.metadata_ref}
-        )
+    analysis_entity, analysis_metadata = await crud.get_full_analysis_by_owner(db, doc_db, analysis_id, user.get('id'))
+    if analysis_entity is not None:
         if analysis_metadata is not None:
             return analysis_metadata
         raise HTTPException(status_code=404, detail='Analysis Metadata not found.')
@@ -84,15 +75,11 @@ async def create_analysis(user: user_dependency,
                           analysis_id: int = Path(gt=0)):
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
-    analysis_model = db.query(Analysis) \
-                        .filter(Analysis.id == analysis_id) \
-                        .filter(Analysis.owner_id == user.get('id')) \
-                        .first()
-    analysis_metadata = jsonable_encoder(analysis_metadata)
-    new_analysis_metadata = await doc_db["analyses"].insert_one(analysis_metadata)
-    await doc_db["analyses"].find_one({"_id": new_analysis_metadata.inserted_id})
-    analysis_model.metadata_ref = new_analysis_metadata.inserted_id
-    db.add(analysis_model)
-    db.commit()
+    analysis_entity = crud.get_analysis_by_owner(db, analysis_id, user.get('id'))
+    if analysis_entity is not None:
+        await crud.create_or_update_analysis(db, analysis_entity, doc_db, jsonable_encoder(analysis_metadata))
+    else:
+        raise HTTPException(status_code=404, detail='Analysis not found.')
+
 
 

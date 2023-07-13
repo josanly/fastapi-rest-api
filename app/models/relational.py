@@ -28,6 +28,6 @@ class Analysis(Base):
     priority = Column(Integer)
     complete = Column(Boolean, default=False)
     owner_id = Column(Integer, ForeignKey("users.id"))
-    metadata_ref = Column(Integer, default=None)
+    metadata_ref = Column(String, default=None)
 
     owner = relationship("User", back_populates="analyses")
